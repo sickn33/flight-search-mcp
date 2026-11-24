@@ -10,7 +10,7 @@
   <a href="docs/tools.md"><img src="https://img.shields.io/badge/MCP-37%20tools-243754" alt="37 MCP tools"></a>
 </p>
 
-[Quick start](#quick-start) · [Tools](docs/tools.md) · [Sources and coverage](docs/sources.md) · [Benchmarks](BENCHMARK.md) · [Guida in italiano](docs/guidance.it.md)
+[Quick start](#quick-start) · [Tools](docs/tools.md) · [Sources and coverage](docs/sources.md) · [Benchmarks](BENCHMARK.md)
 
 ## What it does
 
@@ -61,7 +61,6 @@ Exact individual seat prices depend on the offer and the seller’s seat selecti
 | [Checkout and baggage](docs/checkout.md) | Quote, recheck and compare totals with the same extras |
 | [Sources and data](docs/sources.md) | Market support, fees, flight status, storage and attribution |
 | [Benchmarks](BENCHMARK.md) | Methods, published day-one results, and reproducible commands |
-| [Italian guide](docs/guidance.it.md) | Installazione, ricerca, checkout, stato voli e avvisi |
 | [Contributing](CONTRIBUTING.md) | Build, test, and reproduce an issue |
 
 Released under the [MIT license](LICENSE). See [third-party notices](THIRD_PARTY.md).

@@ -55,3 +55,21 @@ The repository includes a local marketplace, plugin manifest and flight-planning
 | `FLIGHT_SKYSCANNER_KEY` | Optional existing Skyscanner partner API key. Select the provider explicitly when searching. Keep the key in client environment configuration. |
 
 A server launches over stdio and exposes no web port. If it fails to start, check `node --version`, rebuild, verify the absolute entry point, and inspect the client’s MCP logs. Flight providers can limit requests. A fast search with partial coverage can still contain useful offers. [Source coverage](sources.md)
+
+## Local price watches
+
+Use `save_price_watch` to save an itinerary and a price threshold in SQLite. Run a one-time check with:
+
+```sh
+node dist/index.js --poll-price-alerts
+```
+
+A price crossing the threshold emits a JSON record. On macOS, add `--notify-macos` to display a system notification. To schedule two daily checks, run the following from the permanent checkout directory.
+
+```sh
+mkdir -p "$HOME/Library/LaunchAgents"
+node dist/index.js --print-macos-launch-agent > "$HOME/Library/LaunchAgents/org.flight-search.price-alerts.plist"
+launchctl bootstrap "gui/$(id -u)" "$HOME/Library/LaunchAgents/org.flight-search.price-alerts.plist"
+```
+
+The checks run while the Mac is on and the user session is active. To unload the launch agent, run `launchctl bootout "gui/$(id -u)/org.flight-search.price-alerts"`.
