@@ -1,0 +1,57 @@
+{
+  "name": "flight-search-mcp",
+  "version": "0.4.9",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "bin": {
+    "flight-search-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "npm run build && node --test test/*.test.mjs",
+    "coverage": "npm run build && c8 --all --src dist --include 'dist/**/*.js' --check-coverage --per-file --lines 100 --functions 100 --branches 100 --statements 100 node --test test/*.test.mjs",
+    "start": "node dist/index.js",
+    "test:mutations": "node test/mutation-check.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1",
+    "cheerio": "^1.2.0",
+    "zod": "^4"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "c8": "^10",
+    "typescript": "^5"
+  },
+  "files": [
+    "dist",
+    "src",
+    "tsconfig.json",
+    "LICENSE*",
+    "README.md",
+    "BENCHMARK.md",
+    "THIRD_PARTY.md",
+    ".codex-plugin",
+    ".mcp.json",
+    ".agents",
+    "skills",
+    "test",
+    "benchmarks",
+    "docs",
+    "assets",
+    "CHANGELOG.md",
+    "CONTRIBUTING.md"
+  ],
+  "description": "Search and compare flights for the whole travel party through MCP.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sickn33/flight-search-mcp.git"
+  },
+  "homepage": "https://github.com/sickn33/flight-search-mcp",
+  "bugs": {
+    "url": "https://github.com/sickn33/flight-search-mcp/issues"
+  }
+}

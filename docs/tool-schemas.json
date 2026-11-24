@@ -1,0 +1,3235 @@
+{
+  "server": {
+    "name": "flight-search-mcp",
+    "version": "0.4.9"
+  },
+  "tools": [
+    {
+      "name": "calculate_trip_cost",
+      "description": "Sum full-party quotes in one currency for flights, stays, transfers, seats and bags. Unpriced components stay unknown.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "currency": {
+            "type": "string",
+            "pattern": "^[A-Z]{3}$"
+          },
+          "travellers": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 80
+          },
+          "components": {
+            "minItems": 1,
+            "maxItems": 40,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "flight",
+                    "stay",
+                    "transfer",
+                    "baggage",
+                    "seat",
+                    "other"
+                  ]
+                },
+                "price": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "pattern": "^\\d{1,10}(?:\\.\\d{1,3})?$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "verified": {
+                  "type": "boolean"
+                },
+                "description": {
+                  "type": "string",
+                  "maxLength": 160
+                }
+              },
+              "required": [
+                "type",
+                "price",
+                "verified",
+                "description"
+              ]
+            }
+          }
+        },
+        "required": [
+          "currency",
+          "travellers",
+          "components"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "check_price_watch",
+      "description": "Check a saved flight search now and report whether the indicative group price meets the target.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "compare_airports",
+      "description": "Compare up to nine airport-pair alternatives for a one-way or round trip.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "type": "object",
+            "properties": {
+              "legs": {
+                "minItems": 1,
+                "maxItems": 6,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "origin": {
+                      "type": "string",
+                      "pattern": "^[A-Z]{3}$"
+                    },
+                    "destination": {
+                      "type": "string",
+                      "pattern": "^[A-Z]{3}$"
+                    },
+                    "date": {
+                      "type": "string",
+                      "format": "date",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                    },
+                    "departure": {
+                      "type": "object",
+                      "properties": {
+                        "from": {
+                          "type": "string",
+                          "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+                        },
+                        "to": {
+                          "type": "string",
+                          "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+                        }
+                      }
+                    },
+                    "arrival": {
+                      "type": "object",
+                      "properties": {
+                        "from": {
+                          "type": "string",
+                          "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+                        },
+                        "to": {
+                          "type": "string",
+                          "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "origin",
+                    "destination",
+                    "date"
+                  ]
+                }
+              },
+              "adults": {
+                "default": 1,
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9
+              },
+              "childAges": {
+                "default": [],
+                "maxItems": 8,
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 17
+                }
+              },
+              "lapInfants": {
+                "default": 0,
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 4
+              },
+              "seatInfants": {
+                "default": 0,
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 4
+              },
+              "cabin": {
+                "default": "economy",
+                "type": "string",
+                "enum": [
+                  "economy",
+                  "premium_economy",
+                  "business",
+                  "first"
+                ]
+              },
+              "currency": {
+                "default": "EUR",
+                "type": "string",
+                "pattern": "^[A-Z]{3}$"
+              },
+              "market": {
+                "default": "IT",
+                "type": "string",
+                "pattern": "^[A-Z]{2}$"
+              },
+              "locale": {
+                "description": "BCP 47 locale. If omitted, use the language of the requested market.",
+                "type": "string"
+              },
+              "maxStops": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "maxDurationMinutes": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "maxTotal": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "carriers": {
+                "default": [],
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "excludedCarriers": {
+                "default": [],
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "sort": {
+                "default": "price",
+                "type": "string",
+                "enum": [
+                  "price",
+                  "duration",
+                  "best"
+                ]
+              },
+              "providers": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "allowSeparateTickets": {
+                "default": false,
+                "type": "boolean"
+              },
+              "limit": {
+                "default": 20,
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 100
+              }
+            },
+            "required": [
+              "legs"
+            ]
+          },
+          "origins": {
+            "minItems": 1,
+            "maxItems": 3,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Z]{3}$"
+            }
+          },
+          "destinations": {
+            "minItems": 1,
+            "maxItems": 3,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Z]{3}$"
+            }
+          }
+        },
+        "required": [
+          "request",
+          "origins",
+          "destinations"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "compare_checkout_quotes",
+      "description": "Compare seller totals observed before payment for identical flights, party, fare conditions and extras. Excludes listings and mismatches, and shows changes from the original quote.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "expected": {
+            "type": "object",
+            "properties": {
+              "currency": {
+                "type": "string",
+                "pattern": "^[A-Z]{3}$"
+              },
+              "cabin": {
+                "type": "string",
+                "enum": [
+                  "economy",
+                  "premium_economy",
+                  "business",
+                  "first"
+                ]
+              },
+              "market": {
+                "type": "string",
+                "pattern": "^[A-Z]{2}$"
+              },
+              "party": {
+                "type": "object",
+                "properties": {
+                  "adults": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9
+                  },
+                  "childAges": {
+                    "maxItems": 8,
+                    "type": "array",
+                    "items": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 17
+                    }
+                  },
+                  "lapInfants": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 4
+                  },
+                  "seatInfants": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 4
+                  }
+                },
+                "required": [
+                  "adults",
+                  "childAges",
+                  "lapInfants",
+                  "seatInfants"
+                ]
+              },
+              "flights": {
+                "minItems": 1,
+                "maxItems": 12,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "origin": {
+                      "type": "string",
+                      "pattern": "^[A-Z]{3}$"
+                    },
+                    "destination": {
+                      "type": "string",
+                      "pattern": "^[A-Z]{3}$"
+                    },
+                    "date": {
+                      "type": "string",
+                      "format": "date",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                    },
+                    "number": {
+                      "type": "string",
+                      "pattern": "^[A-Z0-9]{2}\\d{1,4}[A-Z]?$"
+                    },
+                    "departureLocalTime": {
+                      "type": "string",
+                      "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+                    }
+                  },
+                  "required": [
+                    "origin",
+                    "destination",
+                    "date",
+                    "number",
+                    "departureLocalTime"
+                  ]
+                }
+              },
+              "fareConditions": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 180
+              },
+              "extras": {
+                "maxItems": 72,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "passenger": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 80
+                    },
+                    "segment": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 12
+                    },
+                    "description": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    }
+                  },
+                  "required": [
+                    "passenger",
+                    "segment",
+                    "description"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "currency",
+              "cabin",
+              "market",
+              "party",
+              "flights",
+              "fareConditions",
+              "extras"
+            ]
+          },
+          "offers": {
+            "minItems": 1,
+            "maxItems": 30,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "seller": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "observed": {
+                  "type": "object",
+                  "properties": {
+                    "currency": {
+                      "type": "string",
+                      "pattern": "^[A-Z]{3}$"
+                    },
+                    "cabin": {
+                      "type": "string",
+                      "enum": [
+                        "economy",
+                        "premium_economy",
+                        "business",
+                        "first"
+                      ]
+                    },
+                    "market": {
+                      "type": "string",
+                      "pattern": "^[A-Z]{2}$"
+                    },
+                    "party": {
+                      "type": "object",
+                      "properties": {
+                        "adults": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9
+                        },
+                        "childAges": {
+                          "maxItems": 8,
+                          "type": "array",
+                          "items": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 17
+                          }
+                        },
+                        "lapInfants": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 4
+                        },
+                        "seatInfants": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 4
+                        }
+                      },
+                      "required": [
+                        "adults",
+                        "childAges",
+                        "lapInfants",
+                        "seatInfants"
+                      ]
+                    },
+                    "flights": {
+                      "minItems": 1,
+                      "maxItems": 12,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "origin": {
+                            "type": "string",
+                            "pattern": "^[A-Z]{3}$"
+                          },
+                          "destination": {
+                            "type": "string",
+                            "pattern": "^[A-Z]{3}$"
+                          },
+                          "date": {
+                            "type": "string",
+                            "format": "date",
+                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                          },
+                          "number": {
+                            "type": "string",
+                            "pattern": "^[A-Z0-9]{2}\\d{1,4}[A-Z]?$"
+                          },
+                          "departureLocalTime": {
+                            "type": "string",
+                            "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+                          }
+                        },
+                        "required": [
+                          "origin",
+                          "destination",
+                          "date",
+                          "number",
+                          "departureLocalTime"
+                        ]
+                      }
+                    },
+                    "fareConditions": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 180
+                    },
+                    "extras": {
+                      "maxItems": 72,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "passenger": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 80
+                          },
+                          "segment": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 12
+                          },
+                          "description": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          }
+                        },
+                        "required": [
+                          "passenger",
+                          "segment",
+                          "description"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "currency",
+                    "cabin",
+                    "market",
+                    "party",
+                    "flights",
+                    "fareConditions",
+                    "extras"
+                  ]
+                },
+                "stage": {
+                  "type": "string",
+                  "enum": [
+                    "checkout",
+                    "listing"
+                  ]
+                },
+                "observedAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                },
+                "checkoutTotal": {
+                  "type": "string",
+                  "pattern": "^\\d{1,10}(?:\\.\\d{1,3})?$"
+                },
+                "quotedTotal": {
+                  "type": "string",
+                  "pattern": "^\\d{1,10}(?:\\.\\d{1,3})?$"
+                },
+                "sourceUrl": {
+                  "type": "string",
+                  "format": "uri"
+                }
+              },
+              "required": [
+                "seller",
+                "observed",
+                "stage",
+                "observedAt",
+                "checkoutTotal",
+                "sourceUrl"
+              ]
+            }
+          }
+        },
+        "required": [
+          "expected",
+          "offers"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "compare_fare_totals",
+      "description": "Rank fares with quoted bags and seats per passenger and leg. Unknown prices remain unknown, and estimates are clearly marked.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "currency": {
+            "type": "string",
+            "pattern": "^[A-Z]{3}$"
+          },
+          "travellers": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 80
+          },
+          "fares": {
+            "minItems": 1,
+            "maxItems": 20,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "label": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 150
+                },
+                "base": {
+                  "type": "string",
+                  "pattern": "^\\d{1,10}(?:\\.\\d{1,3})?$"
+                },
+                "baseVerified": {
+                  "type": "boolean"
+                },
+                "extras": {
+                  "maxItems": 72,
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "baggage",
+                          "seat",
+                          "other"
+                        ]
+                      },
+                      "passenger": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 80
+                      },
+                      "leg": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 6
+                      },
+                      "price": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^\\d{1,10}(?:\\.\\d{1,3})?$"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "verified": {
+                        "type": "boolean"
+                      },
+                      "description": {
+                        "type": "string",
+                        "maxLength": 160
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "passenger",
+                      "leg",
+                      "price",
+                      "verified",
+                      "description"
+                    ]
+                  }
+                },
+                "change": {
+                  "default": "unknown",
+                  "type": "string",
+                  "enum": [
+                    "included",
+                    "with_fee",
+                    "unavailable",
+                    "unknown"
+                  ]
+                },
+                "refund": {
+                  "default": "unknown",
+                  "type": "string",
+                  "enum": [
+                    "included",
+                    "with_fee",
+                    "unavailable",
+                    "unknown"
+                  ]
+                },
+                "conditionsUrl": {
+                  "type": "string",
+                  "format": "uri"
+                }
+              },
+              "required": [
+                "label",
+                "base",
+                "baseVerified",
+                "extras"
+              ]
+            }
+          }
+        },
+        "required": [
+          "currency",
+          "travellers",
+          "fares"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "compare_travel_parties",
+      "description": "Find flights for groups travelling from different cities and report the sum of separate bookings when comparable.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "parties": {
+            "minItems": 2,
+            "maxItems": 5,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "request": {
+                  "type": "object",
+                  "properties": {
+                    "legs": {
+                      "minItems": 1,
+                      "maxItems": 6,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "origin": {
+                            "type": "string",
+                            "pattern": "^[A-Z]{3}$"
+                          },
+                          "destination": {
+                            "type": "string",
+                            "pattern": "^[A-Z]{3}$"
+                          },
+                          "date": {
+                            "type": "string",
+                            "format": "date",
+                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                          },
+                          "departure": {
+                            "type": "object",
+                            "properties": {
+                              "from": {
+                                "type": "string",
+                                "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+                              },
+                              "to": {
+                                "type": "string",
+                                "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+                              }
+                            }
+                          },
+                          "arrival": {
+                            "type": "object",
+                            "properties": {
+                              "from": {
+                                "type": "string",
+                                "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+                              },
+                              "to": {
+                                "type": "string",
+                                "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+                              }
+                            }
+                          }
+                        },
+                        "required": [
+                          "origin",
+                          "destination",
+                          "date"
+                        ]
+                      }
+                    },
+                    "adults": {
+                      "default": 1,
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 9
+                    },
+                    "childAges": {
+                      "default": [],
+                      "maxItems": 8,
+                      "type": "array",
+                      "items": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 17
+                      }
+                    },
+                    "lapInfants": {
+                      "default": 0,
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 4
+                    },
+                    "seatInfants": {
+                      "default": 0,
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 4
+                    },
+                    "cabin": {
+                      "default": "economy",
+                      "type": "string",
+                      "enum": [
+                        "economy",
+                        "premium_economy",
+                        "business",
+                        "first"
+                      ]
+                    },
+                    "currency": {
+                      "default": "EUR",
+                      "type": "string",
+                      "pattern": "^[A-Z]{3}$"
+                    },
+                    "market": {
+                      "default": "IT",
+                      "type": "string",
+                      "pattern": "^[A-Z]{2}$"
+                    },
+                    "locale": {
+                      "description": "BCP 47 locale. If omitted, use the language of the requested market.",
+                      "type": "string"
+                    },
+                    "maxStops": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "maxDurationMinutes": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "maxTotal": {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    },
+                    "carriers": {
+                      "default": [],
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "excludedCarriers": {
+                      "default": [],
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "sort": {
+                      "default": "price",
+                      "type": "string",
+                      "enum": [
+                        "price",
+                        "duration",
+                        "best"
+                      ]
+                    },
+                    "providers": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "allowSeparateTickets": {
+                      "default": false,
+                      "type": "boolean"
+                    },
+                    "limit": {
+                      "default": 20,
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 100
+                    }
+                  },
+                  "required": [
+                    "legs"
+                  ]
+                }
+              },
+              "required": [
+                "name",
+                "request"
+              ]
+            }
+          }
+        },
+        "required": [
+          "parties"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "compare_weekends",
+      "description": "Compare consecutive date pairs, exclude calendar conflicts and apply separate time windows on each leg. Maximum thirteen weeks.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "adults": {
+            "default": 1,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9
+          },
+          "childAges": {
+            "default": [],
+            "maxItems": 8,
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 17
+            }
+          },
+          "lapInfants": {
+            "default": 0,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 4
+          },
+          "seatInfants": {
+            "default": 0,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 4
+          },
+          "cabin": {
+            "default": "economy",
+            "type": "string",
+            "enum": [
+              "economy",
+              "premium_economy",
+              "business",
+              "first"
+            ]
+          },
+          "currency": {
+            "default": "EUR",
+            "type": "string",
+            "pattern": "^[A-Z]{3}$"
+          },
+          "market": {
+            "default": "IT",
+            "type": "string",
+            "pattern": "^[A-Z]{2}$"
+          },
+          "locale": {
+            "description": "BCP 47 locale. If omitted, use the language of the requested market.",
+            "type": "string"
+          },
+          "maxStops": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "maxDurationMinutes": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "maxTotal": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "carriers": {
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "excludedCarriers": {
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "sort": {
+            "default": "price",
+            "type": "string",
+            "enum": [
+              "price",
+              "duration",
+              "best"
+            ]
+          },
+          "providers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "allowSeparateTickets": {
+            "default": false,
+            "type": "boolean"
+          },
+          "limit": {
+            "default": 20,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "origin": {
+            "type": "string",
+            "pattern": "^[A-Z]{3}$"
+          },
+          "destination": {
+            "type": "string",
+            "pattern": "^[A-Z]{3}$"
+          },
+          "start": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "end": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "departWeekday": {
+            "default": 5,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 6
+          },
+          "nights": {
+            "default": 2,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 30
+          },
+          "excludedDates": {
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            }
+          },
+          "outboundDeparture": {
+            "type": "object",
+            "properties": {
+              "from": {
+                "type": "string",
+                "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+              },
+              "to": {
+                "type": "string",
+                "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+              }
+            }
+          },
+          "outboundArrival": {
+            "type": "object",
+            "properties": {
+              "from": {
+                "type": "string",
+                "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+              },
+              "to": {
+                "type": "string",
+                "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+              }
+            }
+          },
+          "inboundDeparture": {
+            "type": "object",
+            "properties": {
+              "from": {
+                "type": "string",
+                "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+              },
+              "to": {
+                "type": "string",
+                "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+              }
+            }
+          },
+          "inboundArrival": {
+            "type": "object",
+            "properties": {
+              "from": {
+                "type": "string",
+                "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+              },
+              "to": {
+                "type": "string",
+                "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+              }
+            }
+          }
+        },
+        "required": [
+          "origin",
+          "destination",
+          "start",
+          "end"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "delete_price_watch",
+      "description": "Remove one locally saved price watch.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "destructiveHint": true,
+        "idempotentHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "explore_dates",
+      "description": "Explore indicative prices near an outbound date. Search the exact party and dates before relying on the amount.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "origin": {
+            "type": "string",
+            "pattern": "^[A-Z]{3}$"
+          },
+          "destination": {
+            "type": "string",
+            "pattern": "^[A-Z]{3}$"
+          },
+          "departureDate": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "returnDate": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "currency": {
+            "default": "EUR",
+            "type": "string",
+            "pattern": "^[A-Z]{3}$"
+          },
+          "adults": {
+            "default": 1,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9
+          }
+        },
+        "required": [
+          "origin",
+          "destination",
+          "departureDate"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "explore_destinations",
+      "description": "Discover destinations from one airport for a selected departure date.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "origin": {
+            "type": "string",
+            "pattern": "^[A-Z]{3}$"
+          },
+          "departureDate": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "returnDate": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "currency": {
+            "default": "EUR",
+            "type": "string",
+            "pattern": "^[A-Z]{3}$"
+          },
+          "adults": {
+            "default": 1,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9
+          }
+        },
+        "required": [
+          "origin",
+          "departureDate"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "export_itinerary_calendar",
+      "description": "Return an ICS calendar file as text. Prefer timestamps with explicit UTC offsets.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "segments": {
+            "minItems": 1,
+            "maxItems": 36,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "origin": {
+                  "type": "string",
+                  "pattern": "^[A-Z]{3}$"
+                },
+                "destination": {
+                  "type": "string",
+                  "pattern": "^[A-Z]{3}$"
+                },
+                "departure": {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d(?::\\d\\d)?(?:Z|[+-]\\d\\d:\\d\\d)?$"
+                },
+                "arrival": {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d(?::\\d\\d)?(?:Z|[+-]\\d\\d:\\d\\d)?$"
+                },
+                "flightNumber": {
+                  "type": "string",
+                  "pattern": "^[A-Z0-9]{2,10}$"
+                }
+              },
+              "required": [
+                "origin",
+                "destination",
+                "departure",
+                "arrival",
+                "flightNumber"
+              ]
+            }
+          }
+        },
+        "required": [
+          "segments"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "find_flight_hotel_packages",
+      "description": "Find real flight and hotel packages from Lastminute for the specified travel party.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "origin": {
+            "type": "string",
+            "pattern": "^[A-Z]{3}$"
+          },
+          "destination": {
+            "type": "string",
+            "pattern": "^[A-Z]{3}$"
+          },
+          "checkin": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "checkout": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "adults": {
+            "default": 2,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9
+          },
+          "childAges": {
+            "default": [],
+            "maxItems": 8,
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 17
+            }
+          },
+          "limit": {
+            "default": 5,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10
+          }
+        },
+        "required": [
+          "origin",
+          "destination",
+          "checkin",
+          "checkout"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "find_rental_cars",
+      "description": "Search car rentals from the airport or city for exact local pickup and drop-off times.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "pickupLocation": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "dropoffLocation": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "pickupDate": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "dropoffDate": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "pickupTime": {
+            "default": "10:00",
+            "type": "string",
+            "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+          },
+          "dropoffTime": {
+            "default": "10:00",
+            "type": "string",
+            "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+          },
+          "limit": {
+            "default": 10,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 25
+          }
+        },
+        "required": [
+          "pickupLocation",
+          "pickupDate",
+          "dropoffDate"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "find_stays",
+      "description": "Search hotel quotes for a verified city. Use the Italian city name, e.g. Lione, with its country code. Verify occupancy and taxes at checkout.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "city": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "country": {
+            "type": "string",
+            "pattern": "^[A-Z]{2}$"
+          },
+          "checkin": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "checkout": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "adults": {
+            "default": 2,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9
+          },
+          "childAges": {
+            "default": [],
+            "maxItems": 8,
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 17
+            }
+          },
+          "limit": {
+            "default": 5,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10
+          }
+        },
+        "required": [
+          "city",
+          "country",
+          "checkin",
+          "checkout"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "get_avinor_flight_status",
+      "description": "Look up an arrival or departure at an Avinor airport in Norway. Share the returned attribution link next to the data. A missing row is not a cancellation.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "airport": {
+            "type": "string",
+            "pattern": "^[A-Z]{3}$"
+          },
+          "flightNumber": {
+            "type": "string",
+            "pattern": "^[A-Z0-9]{2}\\d{1,4}[A-Z]?$"
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "departure",
+              "arrival"
+            ]
+          }
+        },
+        "required": [
+          "airport",
+          "flightNumber",
+          "date",
+          "direction"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "get_bologna_flight_status",
+      "description": "Read the official Bologna airport page for an arrival or departure today or tomorrow, verifying flight number and local date.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "flightNumber": {
+            "type": "string",
+            "pattern": "^[A-Z0-9]{2}\\d{1,4}[A-Z]?$"
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "departure",
+              "arrival"
+            ]
+          }
+        },
+        "required": [
+          "flightNumber",
+          "date",
+          "direction"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "get_faa_airport_conditions",
+      "description": "Read FAA airport advisories for a US airport, including published ground delays, stops or closure restrictions. Read the restriction scope and verify individual flights with the airline.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "airport": {
+            "type": "string",
+            "pattern": "^[A-Z]{3}$"
+          }
+        },
+        "required": [
+          "airport"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "get_fiumicino_departure_status",
+      "description": "Read the official Rome Fiumicino departures board and verify the flight date before returning a gate, terminal, check-in desk and status. A missing row is not a cancellation.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "flightNumber": {
+            "type": "string",
+            "pattern": "^[A-Z0-9]{2}\\d{1,4}[A-Z]?$"
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          }
+        },
+        "required": [
+          "flightNumber",
+          "date"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "get_flight_assistance",
+      "description": "Find official airline and airport links for check-in, gate and disruption updates, baggage and passenger support.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "flightNumber": {
+            "type": "string",
+            "pattern": "^[A-Z0-9]{2}\\d{1,4}[A-Z]?$"
+          },
+          "operatingCarrier": {
+            "type": "string",
+            "pattern": "^[A-Z0-9]{2}$"
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "origin": {
+            "type": "string",
+            "pattern": "^[A-Z]{3}$"
+          },
+          "destination": {
+            "type": "string",
+            "pattern": "^[A-Z]{3}$"
+          },
+          "issue": {
+            "default": "upcoming",
+            "type": "string",
+            "enum": [
+              "upcoming",
+              "delay",
+              "cancelled",
+              "missed_connection",
+              "baggage",
+              "accessibility"
+            ]
+          }
+        },
+        "required": [
+          "flightNumber",
+          "date"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "get_italian_aviation_strikes",
+      "description": "Read upcoming Italian aviation strike announcements published by the Ministry of Transport for inclusive dates. Reports the published scope and hours. Check actual flight operation with the airline.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "end": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          }
+        },
+        "required": [
+          "start",
+          "end"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "get_kaohsiung_flight_board",
+      "description": "Find a flight number on today's Kaohsiung airport snapshot. Source rows lack individual dates. Include dataset attribution when presenting results.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "flightNumber": {
+            "type": "string",
+            "pattern": "^[A-Z0-9]{2}\\d{1,4}[A-Z]?$"
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "departure",
+              "arrival"
+            ]
+          },
+          "service": {
+            "type": "string",
+            "enum": [
+              "domestic",
+              "international"
+            ]
+          }
+        },
+        "required": [
+          "flightNumber",
+          "date",
+          "direction",
+          "service"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "get_songshan_flight_status",
+      "description": "Read today's Taipei Songshan arrival or departure boards in Taipei local time. Times reported by the board can be estimates. Share the dataset attribution and license with results.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "flightNumber": {
+            "type": "string",
+            "pattern": "^[A-Z0-9]{2}\\d{1,4}[A-Z]?$"
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "departure",
+              "arrival"
+            ]
+          },
+          "service": {
+            "default": "all",
+            "type": "string",
+            "enum": [
+              "all",
+              "domestic",
+              "international"
+            ]
+          }
+        },
+        "required": [
+          "flightNumber",
+          "date",
+          "direction"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "get_stay_checkout_link",
+      "description": "Generate the external checkout link for a selected Lastminute room or package rate.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "pricingId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "rateId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          }
+        },
+        "required": [
+          "pricingId",
+          "rateId"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "import_calendar_conflicts",
+      "description": "Extract blocked travel dates from supplied iCalendar text. Recurring or named-time-zone events are reported as ignored.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "ics": {
+            "type": "string",
+            "maxLength": 1500000
+          },
+          "start": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "end": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          }
+        },
+        "required": [
+          "ics",
+          "start",
+          "end"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "inspect_axel_fare",
+      "description": "Read an Axel nonstop offer. Show quoted baggage fees with their original unit and fare-specific seat-selection conditions. No per-seat quote is provided.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "maxLength": 2000
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "inspect_stay_or_package",
+      "description": "Find room options and current quote details using IDs from Lastminute hotel or package results.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "searchId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "hotelId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "checkin": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "checkout": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          }
+        },
+        "required": [
+          "searchId",
+          "hotelId",
+          "checkin",
+          "checkout"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "list_price_watches",
+      "description": "Read saved flight searches and price targets.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "list_providers",
+      "description": "List free public sources and any explicitly configured Skyscanner partner source.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "quote_airtreks_itinerary",
+      "description": "Get a live AirTreks group quote for explicit dated legs on one fare. Supports open jaws. Published flight descriptions omit exact times, and the seller planner is a generic link.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "legs": {
+            "minItems": 1,
+            "maxItems": 9,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "origin": {
+                  "type": "string",
+                  "pattern": "^[A-Z]{3}$"
+                },
+                "destination": {
+                  "type": "string",
+                  "pattern": "^[A-Z]{3}$"
+                },
+                "date": {
+                  "type": "string",
+                  "format": "date",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                }
+              },
+              "required": [
+                "origin",
+                "destination",
+                "date"
+              ]
+            }
+          },
+          "adults": {
+            "default": 1,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9
+          },
+          "children": {
+            "default": 0,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 8
+          },
+          "lapInfants": {
+            "default": 0,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 8
+          },
+          "cabin": {
+            "default": "economy",
+            "type": "string",
+            "enum": [
+              "economy",
+              "premium",
+              "business",
+              "first"
+            ]
+          },
+          "maxTotalStops": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "limit": {
+            "default": 5,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10
+          }
+        },
+        "required": [
+          "legs"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "quote_flights_with_baggage",
+      "description": "Get Kiwi API flight quotes with cabin and hold bags requested per traveller. The price and bag specifications can differ on the seller page. Check them before paying.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "type": "object",
+            "properties": {
+              "legs": {
+                "minItems": 1,
+                "maxItems": 6,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "origin": {
+                      "type": "string",
+                      "pattern": "^[A-Z]{3}$"
+                    },
+                    "destination": {
+                      "type": "string",
+                      "pattern": "^[A-Z]{3}$"
+                    },
+                    "date": {
+                      "type": "string",
+                      "format": "date",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                    },
+                    "departure": {
+                      "type": "object",
+                      "properties": {
+                        "from": {
+                          "type": "string",
+                          "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+                        },
+                        "to": {
+                          "type": "string",
+                          "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+                        }
+                      }
+                    },
+                    "arrival": {
+                      "type": "object",
+                      "properties": {
+                        "from": {
+                          "type": "string",
+                          "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+                        },
+                        "to": {
+                          "type": "string",
+                          "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "origin",
+                    "destination",
+                    "date"
+                  ]
+                }
+              },
+              "adults": {
+                "default": 1,
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9
+              },
+              "childAges": {
+                "default": [],
+                "maxItems": 8,
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 17
+                }
+              },
+              "lapInfants": {
+                "default": 0,
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 4
+              },
+              "seatInfants": {
+                "default": 0,
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 4
+              },
+              "cabin": {
+                "default": "economy",
+                "type": "string",
+                "enum": [
+                  "economy",
+                  "premium_economy",
+                  "business",
+                  "first"
+                ]
+              },
+              "currency": {
+                "default": "EUR",
+                "type": "string",
+                "pattern": "^[A-Z]{3}$"
+              },
+              "market": {
+                "default": "IT",
+                "type": "string",
+                "pattern": "^[A-Z]{2}$"
+              },
+              "locale": {
+                "description": "BCP 47 locale. If omitted, use the language of the requested market.",
+                "type": "string"
+              },
+              "maxStops": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "maxDurationMinutes": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "maxTotal": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "carriers": {
+                "default": [],
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "excludedCarriers": {
+                "default": [],
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "sort": {
+                "default": "price",
+                "type": "string",
+                "enum": [
+                  "price",
+                  "duration",
+                  "best"
+                ]
+              },
+              "providers": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "allowSeparateTickets": {
+                "default": false,
+                "type": "boolean"
+              },
+              "limit": {
+                "default": 20,
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 100
+              }
+            },
+            "required": [
+              "legs"
+            ]
+          },
+          "allocation": {
+            "type": "object",
+            "properties": {
+              "adultHold": {
+                "maxItems": 9,
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 2
+                }
+              },
+              "adultCabin": {
+                "maxItems": 9,
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              },
+              "childHold": {
+                "maxItems": 8,
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 2
+                }
+              },
+              "childCabin": {
+                "maxItems": 8,
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              }
+            }
+          }
+        },
+        "required": [
+          "request",
+          "allocation"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "refresh_offer",
+      "description": "Check a prior offer by repeating the exact search with the original provider and passenger composition. If the offer ID is absent, its prior price is unverified.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "type": "object",
+            "properties": {
+              "legs": {
+                "minItems": 1,
+                "maxItems": 6,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "origin": {
+                      "type": "string",
+                      "pattern": "^[A-Z]{3}$"
+                    },
+                    "destination": {
+                      "type": "string",
+                      "pattern": "^[A-Z]{3}$"
+                    },
+                    "date": {
+                      "type": "string",
+                      "format": "date",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                    },
+                    "departure": {
+                      "type": "object",
+                      "properties": {
+                        "from": {
+                          "type": "string",
+                          "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+                        },
+                        "to": {
+                          "type": "string",
+                          "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+                        }
+                      }
+                    },
+                    "arrival": {
+                      "type": "object",
+                      "properties": {
+                        "from": {
+                          "type": "string",
+                          "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+                        },
+                        "to": {
+                          "type": "string",
+                          "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "origin",
+                    "destination",
+                    "date"
+                  ]
+                }
+              },
+              "adults": {
+                "default": 1,
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9
+              },
+              "childAges": {
+                "default": [],
+                "maxItems": 8,
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 17
+                }
+              },
+              "lapInfants": {
+                "default": 0,
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 4
+              },
+              "seatInfants": {
+                "default": 0,
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 4
+              },
+              "cabin": {
+                "default": "economy",
+                "type": "string",
+                "enum": [
+                  "economy",
+                  "premium_economy",
+                  "business",
+                  "first"
+                ]
+              },
+              "currency": {
+                "default": "EUR",
+                "type": "string",
+                "pattern": "^[A-Z]{3}$"
+              },
+              "market": {
+                "default": "IT",
+                "type": "string",
+                "pattern": "^[A-Z]{2}$"
+              },
+              "locale": {
+                "description": "BCP 47 locale. If omitted, use the language of the requested market.",
+                "type": "string"
+              },
+              "maxStops": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "maxDurationMinutes": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "maxTotal": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "carriers": {
+                "default": [],
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "excludedCarriers": {
+                "default": [],
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "sort": {
+                "default": "price",
+                "type": "string",
+                "enum": [
+                  "price",
+                  "duration",
+                  "best"
+                ]
+              },
+              "providers": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "allowSeparateTickets": {
+                "default": false,
+                "type": "boolean"
+              },
+              "limit": {
+                "default": 20,
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 100
+              }
+            },
+            "required": [
+              "legs"
+            ]
+          },
+          "provider": {
+            "type": "string"
+          },
+          "offerId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "request",
+          "provider",
+          "offerId"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "resolve_airport",
+      "description": "Resolve a place name or existing airport code via Skiplagged.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "place": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          }
+        },
+        "required": [
+          "place"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "save_price_watch",
+      "description": "Save a local fare target for a specific party and itinerary. Check it on demand.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "target": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "request": {
+            "type": "object",
+            "properties": {
+              "legs": {
+                "minItems": 1,
+                "maxItems": 6,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "origin": {
+                      "type": "string",
+                      "pattern": "^[A-Z]{3}$"
+                    },
+                    "destination": {
+                      "type": "string",
+                      "pattern": "^[A-Z]{3}$"
+                    },
+                    "date": {
+                      "type": "string",
+                      "format": "date",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                    },
+                    "departure": {
+                      "type": "object",
+                      "properties": {
+                        "from": {
+                          "type": "string",
+                          "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+                        },
+                        "to": {
+                          "type": "string",
+                          "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+                        }
+                      }
+                    },
+                    "arrival": {
+                      "type": "object",
+                      "properties": {
+                        "from": {
+                          "type": "string",
+                          "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+                        },
+                        "to": {
+                          "type": "string",
+                          "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "origin",
+                    "destination",
+                    "date"
+                  ]
+                }
+              },
+              "adults": {
+                "default": 1,
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9
+              },
+              "childAges": {
+                "default": [],
+                "maxItems": 8,
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 17
+                }
+              },
+              "lapInfants": {
+                "default": 0,
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 4
+              },
+              "seatInfants": {
+                "default": 0,
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 4
+              },
+              "cabin": {
+                "default": "economy",
+                "type": "string",
+                "enum": [
+                  "economy",
+                  "premium_economy",
+                  "business",
+                  "first"
+                ]
+              },
+              "currency": {
+                "default": "EUR",
+                "type": "string",
+                "pattern": "^[A-Z]{3}$"
+              },
+              "market": {
+                "default": "IT",
+                "type": "string",
+                "pattern": "^[A-Z]{2}$"
+              },
+              "locale": {
+                "description": "BCP 47 locale. If omitted, use the language of the requested market.",
+                "type": "string"
+              },
+              "maxStops": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "maxDurationMinutes": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "maxTotal": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "carriers": {
+                "default": [],
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "excludedCarriers": {
+                "default": [],
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "sort": {
+                "default": "price",
+                "type": "string",
+                "enum": [
+                  "price",
+                  "duration",
+                  "best"
+                ]
+              },
+              "providers": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "allowSeparateTickets": {
+                "default": false,
+                "type": "boolean"
+              },
+              "limit": {
+                "default": 20,
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 100
+              }
+            },
+            "required": [
+              "legs"
+            ]
+          }
+        },
+        "required": [
+          "label",
+          "target",
+          "request"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "search_awards",
+      "description": "Find candidate award seats. Recheck miles, taxes and availability with the loyalty program.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "origins": {
+            "minItems": 1,
+            "maxItems": 3,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Z]{3}$"
+            }
+          },
+          "destinations": {
+            "maxItems": 3,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Z]{3}$"
+            }
+          },
+          "departureDate": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "departureDateEnd": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "seats": {
+            "default": 1,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9
+          },
+          "directOnly": {
+            "default": false,
+            "type": "boolean"
+          },
+          "limit": {
+            "default": 10,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 25
+          }
+        },
+        "required": [
+          "origins"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "search_flights",
+      "description": "Search by explicit flight legs, exact party, market, and local time windows. The optional partner source must be selected explicitly.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "legs": {
+            "minItems": 1,
+            "maxItems": 6,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "origin": {
+                  "type": "string",
+                  "pattern": "^[A-Z]{3}$"
+                },
+                "destination": {
+                  "type": "string",
+                  "pattern": "^[A-Z]{3}$"
+                },
+                "date": {
+                  "type": "string",
+                  "format": "date",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                },
+                "departure": {
+                  "type": "object",
+                  "properties": {
+                    "from": {
+                      "type": "string",
+                      "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+                    },
+                    "to": {
+                      "type": "string",
+                      "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+                    }
+                  }
+                },
+                "arrival": {
+                  "type": "object",
+                  "properties": {
+                    "from": {
+                      "type": "string",
+                      "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+                    },
+                    "to": {
+                      "type": "string",
+                      "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+                    }
+                  }
+                }
+              },
+              "required": [
+                "origin",
+                "destination",
+                "date"
+              ]
+            }
+          },
+          "adults": {
+            "default": 1,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9
+          },
+          "childAges": {
+            "default": [],
+            "maxItems": 8,
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 17
+            }
+          },
+          "lapInfants": {
+            "default": 0,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 4
+          },
+          "seatInfants": {
+            "default": 0,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 4
+          },
+          "cabin": {
+            "default": "economy",
+            "type": "string",
+            "enum": [
+              "economy",
+              "premium_economy",
+              "business",
+              "first"
+            ]
+          },
+          "currency": {
+            "default": "EUR",
+            "type": "string",
+            "pattern": "^[A-Z]{3}$"
+          },
+          "market": {
+            "default": "IT",
+            "type": "string",
+            "pattern": "^[A-Z]{2}$"
+          },
+          "locale": {
+            "description": "BCP 47 locale. If omitted, use the language of the requested market.",
+            "type": "string"
+          },
+          "maxStops": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "maxDurationMinutes": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "maxTotal": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "carriers": {
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "excludedCarriers": {
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "sort": {
+            "default": "price",
+            "type": "string",
+            "enum": [
+              "price",
+              "duration",
+              "best"
+            ]
+          },
+          "providers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "allowSeparateTickets": {
+            "default": false,
+            "type": "boolean"
+          },
+          "limit": {
+            "default": 20,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          }
+        },
+        "required": [
+          "legs"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "search_split_itinerary",
+      "description": "Compare successive one-way fares for a multi-city or open-jaw itinerary with independently purchased tickets. Do not infer protected connections.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "legs": {
+            "minItems": 1,
+            "maxItems": 6,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "origin": {
+                  "type": "string",
+                  "pattern": "^[A-Z]{3}$"
+                },
+                "destination": {
+                  "type": "string",
+                  "pattern": "^[A-Z]{3}$"
+                },
+                "date": {
+                  "type": "string",
+                  "format": "date",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                },
+                "departure": {
+                  "type": "object",
+                  "properties": {
+                    "from": {
+                      "type": "string",
+                      "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+                    },
+                    "to": {
+                      "type": "string",
+                      "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+                    }
+                  }
+                },
+                "arrival": {
+                  "type": "object",
+                  "properties": {
+                    "from": {
+                      "type": "string",
+                      "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+                    },
+                    "to": {
+                      "type": "string",
+                      "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+                    }
+                  }
+                }
+              },
+              "required": [
+                "origin",
+                "destination",
+                "date"
+              ]
+            }
+          },
+          "adults": {
+            "default": 1,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9
+          },
+          "childAges": {
+            "default": [],
+            "maxItems": 8,
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 17
+            }
+          },
+          "lapInfants": {
+            "default": 0,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 4
+          },
+          "seatInfants": {
+            "default": 0,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 4
+          },
+          "cabin": {
+            "default": "economy",
+            "type": "string",
+            "enum": [
+              "economy",
+              "premium_economy",
+              "business",
+              "first"
+            ]
+          },
+          "currency": {
+            "default": "EUR",
+            "type": "string",
+            "pattern": "^[A-Z]{3}$"
+          },
+          "market": {
+            "default": "IT",
+            "type": "string",
+            "pattern": "^[A-Z]{2}$"
+          },
+          "locale": {
+            "description": "BCP 47 locale. If omitted, use the language of the requested market.",
+            "type": "string"
+          },
+          "maxStops": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "maxDurationMinutes": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "maxTotal": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "carriers": {
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "excludedCarriers": {
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "sort": {
+            "default": "price",
+            "type": "string",
+            "enum": [
+              "price",
+              "duration",
+              "best"
+            ]
+          },
+          "providers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "allowSeparateTickets": {
+            "default": false,
+            "type": "boolean"
+          },
+          "limit": {
+            "default": 20,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          }
+        },
+        "required": [
+          "legs"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "track_airborne_flight",
+      "description": "Look up a commercial ICAO callsign using public ADS-B. Use the airline board for cancellation, delay, terminal and gate.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "callsign": {
+            "type": "string",
+            "pattern": "^[A-Z]{3}\\d[A-Z0-9]{0,3}$"
+          }
+        },
+        "required": [
+          "callsign"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    }
+  ]
+}

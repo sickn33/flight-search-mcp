@@ -1,0 +1,248 @@
+[
+  {
+    "expected": {
+      "currency": "EUR",
+      "market": "IT",
+      "cabin": "economy",
+      "party": {
+        "adults": 2,
+        "childAges": [],
+        "lapInfants": 0,
+        "seatInfants": 0
+      },
+      "flights": [
+        {
+          "origin": "FCO",
+          "destination": "LYS",
+          "date": "2027-03-05",
+          "number": "U22997",
+          "departureLocalTime": "10:30"
+        },
+        {
+          "origin": "LYS",
+          "destination": "FCO",
+          "date": "2027-03-07",
+          "number": "U24421",
+          "departureLocalTime": "20:20"
+        }
+      ],
+      "fareConditions": "Economy, una borsa piccola inclusa per adulto, nessun servizio facoltativo selezionato",
+      "extras": []
+    },
+    "offers": [
+      {
+        "seller": "Kiwi.com",
+        "observed": {
+          "currency": "EUR",
+          "market": "IT",
+          "cabin": "economy",
+          "party": {
+            "adults": 2,
+            "childAges": [],
+            "lapInfants": 0,
+            "seatInfants": 0
+          },
+          "flights": [
+            {
+              "origin": "FCO",
+              "destination": "LYS",
+              "date": "2027-03-05",
+              "number": "U22997",
+              "departureLocalTime": "10:30"
+            },
+            {
+              "origin": "LYS",
+              "destination": "FCO",
+              "date": "2027-03-07",
+              "number": "U24421",
+              "departureLocalTime": "20:20"
+            }
+          ],
+          "fareConditions": "Economy, una borsa piccola inclusa per adulto, nessun servizio facoltativo selezionato",
+          "extras": []
+        },
+        "stage": "checkout",
+        "observedAt": "2026-11-24T20:08:00+01:00",
+        "checkoutTotal": "172.00",
+        "sourceUrl": "https://www.kiwi.com/",
+        "quotedTotal": "172.00"
+      },
+      {
+        "seller": "lastminute.com",
+        "observed": {
+          "currency": "EUR",
+          "market": "IT",
+          "cabin": "economy",
+          "party": {
+            "adults": 2,
+            "childAges": [],
+            "lapInfants": 0,
+            "seatInfants": 0
+          },
+          "flights": [
+            {
+              "origin": "FCO",
+              "destination": "LYS",
+              "date": "2027-03-05",
+              "number": "U22997",
+              "departureLocalTime": "10:30"
+            },
+            {
+              "origin": "LYS",
+              "destination": "FCO",
+              "date": "2027-03-07",
+              "number": "U24421",
+              "departureLocalTime": "20:20"
+            }
+          ],
+          "fareConditions": "Economy, una borsa piccola inclusa per adulto, nessun servizio facoltativo selezionato",
+          "extras": []
+        },
+        "stage": "checkout",
+        "observedAt": "2026-11-24T20:08:00+01:00",
+        "checkoutTotal": "162.08",
+        "sourceUrl": "https://www.it.lastminute.com/",
+        "quotedTotal": "162.08"
+      }
+    ]
+  },
+  {
+    "expected": {
+      "currency": "EUR",
+      "market": "IT",
+      "cabin": "economy",
+      "party": {
+        "adults": 2,
+        "childAges": [],
+        "lapInfants": 0,
+        "seatInfants": 0
+      },
+      "flights": [
+        {
+          "origin": "FCO",
+          "destination": "LYS",
+          "date": "2027-03-05",
+          "number": "U22997",
+          "departureLocalTime": "10:30"
+        },
+        {
+          "origin": "LYS",
+          "destination": "FCO",
+          "date": "2027-03-07",
+          "number": "U24421",
+          "departureLocalTime": "20:20"
+        }
+      ],
+      "fareConditions": "Economy, una borsa piccola inclusa per adulto, nessun servizio facoltativo oltre al bagaglio",
+      "extras": [
+        {
+          "passenger": 1,
+          "segment": 1,
+          "description": "Un collo da stiva di 15 kg"
+        },
+        {
+          "passenger": 1,
+          "segment": 2,
+          "description": "Un collo da stiva di 15 kg"
+        }
+      ]
+    },
+    "offers": [
+      {
+        "seller": "Kiwi.com",
+        "observed": {
+          "currency": "EUR",
+          "market": "IT",
+          "cabin": "economy",
+          "party": {
+            "adults": 2,
+            "childAges": [],
+            "lapInfants": 0,
+            "seatInfants": 0
+          },
+          "flights": [
+            {
+              "origin": "FCO",
+              "destination": "LYS",
+              "date": "2027-03-05",
+              "number": "U22997",
+              "departureLocalTime": "10:30"
+            },
+            {
+              "origin": "LYS",
+              "destination": "FCO",
+              "date": "2027-03-07",
+              "number": "U24421",
+              "departureLocalTime": "20:20"
+            }
+          ],
+          "fareConditions": "Economy, una borsa piccola inclusa per adulto, nessun servizio facoltativo oltre al bagaglio",
+          "extras": [
+            {
+              "passenger": 1,
+              "segment": 1,
+              "description": "Un collo da stiva di 15 kg"
+            },
+            {
+              "passenger": 1,
+              "segment": 2,
+              "description": "Un collo da stiva di 15 kg"
+            }
+          ]
+        },
+        "stage": "checkout",
+        "observedAt": "2026-11-24T20:08:00+01:00",
+        "checkoutTotal": "259.07",
+        "sourceUrl": "https://www.kiwi.com/",
+        "quotedTotal": "281.19"
+      },
+      {
+        "seller": "lastminute.com",
+        "observed": {
+          "currency": "EUR",
+          "market": "IT",
+          "cabin": "economy",
+          "party": {
+            "adults": 2,
+            "childAges": [],
+            "lapInfants": 0,
+            "seatInfants": 0
+          },
+          "flights": [
+            {
+              "origin": "FCO",
+              "destination": "LYS",
+              "date": "2027-03-05",
+              "number": "U22997",
+              "departureLocalTime": "10:30"
+            },
+            {
+              "origin": "LYS",
+              "destination": "FCO",
+              "date": "2027-03-07",
+              "number": "U24421",
+              "departureLocalTime": "20:20"
+            }
+          ],
+          "fareConditions": "Economy, una borsa piccola inclusa per adulto, nessun servizio facoltativo oltre al bagaglio",
+          "extras": [
+            {
+              "passenger": 1,
+              "segment": 1,
+              "description": "Un collo da stiva di 15 kg"
+            },
+            {
+              "passenger": 1,
+              "segment": 2,
+              "description": "Un collo da stiva di 15 kg"
+            }
+          ]
+        },
+        "stage": "checkout",
+        "observedAt": "2026-11-24T20:08:00+01:00",
+        "checkoutTotal": "287.50",
+        "sourceUrl": "https://www.it.lastminute.com/"
+      }
+    ]
+  }
+]

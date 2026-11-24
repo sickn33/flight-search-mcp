@@ -1,0 +1,9 @@
+{
+  "name": "flight-search",
+  "version": "0.4.9",
+  "description": "Compare flights for the exact travel party and dates with checkout links, price watches and trip planning.",
+  "mcpServers": "./.mcp.json",
+  "skills": "./skills/",
+  "requires_local_executor": true,
+  "interface": {"displayName": "Flight Search", "category": "Travel", "shortDescription": "Find and compare flights for your whole travel party"}
+}

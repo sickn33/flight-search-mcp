@@ -1,0 +1,37 @@
+{
+  "observedOn": "2026-11-24",
+  "timeZone": "Europe/Rome",
+  "browserCountry": "IT",
+  "currencyFromSeller": true,
+  "paymentSubmitted": false,
+  "comparisons": [
+    {
+      "origin": "MAD", "destination": "FCO", "outbound": "2027-03-05", "return": "2027-03-07",
+      "flightNumbers": ["W46208", "W46011"], "adults": 2, "currency": "EUR", "cabin": "economy",
+      "extras": "Small personal item per adult; no seat or other extra selected",
+      "sellers": [
+        { "name": "Lastminute", "apiTotal": 159.96, "siteTotal": 159.96, "linkOpened": true },
+        { "name": "Kiwi.com", "apiTotal": 166.00, "siteTotal": 166.00, "linkOpened": true }
+      ]
+    },
+    {
+      "origin": "MAD", "destination": "FCO", "outbound": "2027-03-05", "return": "2027-03-07",
+      "flightNumbers": ["W46208", "W46011"], "adults": 2, "currency": "EUR", "cabin": "economy",
+      "extras": "Small personal item per adult plus one 20 kg checked bag on each leg for adult 1; no seat or other extra selected",
+      "sellers": [
+        { "name": "Lastminute", "siteTotal": 315.90, "linkOpened": true },
+        { "name": "Kiwi.com", "siteTotal": 319.14, "linkOpened": true }
+      ]
+    },
+    {
+      "origin": "LAX", "destination": "JFK", "outbound": "2027-03-05", "flightNumbers": ["B6424"],
+      "adults": 1, "currency": "USD", "cabin": "economy",
+      "extras": "Carry-on included; no hold bag, seat selection or other extra added",
+      "sellers": [
+        { "name": "Axel", "apiTotal": 205, "siteTotal": 204.97, "linkOpened": true },
+        { "name": "Kiwi.com", "apiTotal": 212, "siteTotal": 212, "linkOpened": true }
+      ],
+      "note": "Matched flight, group and selected extras. Seller fare terms and benefits were not compared."
+    }
+  ]
+}
